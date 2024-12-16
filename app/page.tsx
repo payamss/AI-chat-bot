@@ -55,16 +55,31 @@ export default function Home() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6 bg-primary-neutral-gray-850 shadow-lg rounded-lg mt-10">
-      <h1 className="text-3xl font-bold text-crimson text-center">Your ASsiStanT</h1>
-      <Dropdown models={models} selectedModel={selectedModel} onModelChange={setSelectedModel} />
-      <div className="space-y-4">
-        <MessageDisplay messages={messages} />
-        {thinkingMessage && (
-          <p className="text-center text-gray-400 animate-pulse">{thinkingMessage}</p>
-        )}
+    <div className="h-screen flex flex-col bg-primary-neutral-gray-850 text-gray-200 relative">
+      {/* Dropdown fixed at the top-left */}
+      <div className="fixed top-4 left-4 z-10">
+        <Dropdown models={models} selectedModel={selectedModel} onModelChange={setSelectedModel} />
       </div>
-      <ChatBox onSendMessage={(message) => handleSendMessage(message, new AbortController())} />
+
+      {/* Scrollable MessageDisplay Area */}
+      <div className="flex-1 overflow-y-auto p-4 mt-16 mb-52">
+        <MessageDisplay messages={messages} />
+      </div>
+
+      {/* ChatBox fixed at the bottom */}
+      <div className="fixed bottom-0 left-0 w-full bg-primary-neutral-gray-800 p-4 shadow-lg">
+        <ChatBox onSendMessage={(message) => handleSendMessage(message, new AbortController())} />
+      </div>
+
+      {/* Thinking Message Overlay */}
+      {thinkingMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-20">
+          <div className="bg-primary-neutral-gray-800 p-6 rounded-lg shadow-lg w-96 text-center">
+            <h2 className="text-white text-lg font-bold mb-4">Centered Box</h2>
+            <p className="text-xl text-crimson animate-pulse">{thinkingMessage}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
