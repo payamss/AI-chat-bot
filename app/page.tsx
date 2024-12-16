@@ -18,7 +18,7 @@ export default function Home() {
   );
   const controllerRef = useRef<AbortController | null>(null);
 
-  // Load available models when serverUrl changes
+  // Load models when serverUrl changes
   useEffect(() => {
     const loadModels = async () => {
       try {
@@ -57,7 +57,6 @@ export default function Home() {
       );
       const assistantMessage = { role: 'assistant', content: response };
       setMessages((prev) => [...prev, assistantMessage]);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.log('Request aborted by the user.');
@@ -80,7 +79,6 @@ export default function Home() {
 
   return (
     <div className="h-screen flex flex-col bg-primary-neutral-gray-850 text-gray-200 relative">
-      {/* Dropdown fixed at the top-left */}
       <div className="fixed top-4 left-4 z-10">
         <Dropdown models={models} selectedModel={selectedModel} onModelChange={setSelectedModel} />
       </div>
@@ -88,17 +86,14 @@ export default function Home() {
       {/* Settings Button */}
       <Settings serverUrl={serverUrl} onServerUrlChange={setServerUrl} />
 
-      {/* Scrollable MessageDisplay Area */}
       <div className="flex-1 overflow-y-auto p-4 mt-16 mb-52">
         <MessageDisplay messages={messages} />
       </div>
 
-      {/* ChatBox fixed at the bottom */}
       <div className="fixed bottom-0 left-0 w-full bg-primary-neutral-gray-800 p-4 shadow-lg">
         <ChatBox onSendMessage={(message) => handleSendMessage(message)} />
       </div>
 
-      {/* Thinking Message Overlay */}
       {thinkingMessage && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-20">
           <div className="bg-primary-neutral-gray-800 p-6 rounded-lg shadow-lg w-96 text-center">
