@@ -13,9 +13,7 @@ export default function Home() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [thinkingMessage, setThinkingMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [serverUrl, setServerUrl] = useState<string>(
-    process.env.NEXT_PUBLIC_OLLAMA_URL || 'http://localhost:11434'
-  );
+  const [serverUrl, setServerUrl] = useState<string>('http://localhost:11434'); // Default to localhost
   const controllerRef = useRef<AbortController | null>(null);
 
   // Load models when serverUrl changes
@@ -83,7 +81,6 @@ export default function Home() {
         <Dropdown models={models} selectedModel={selectedModel} onModelChange={setSelectedModel} />
       </div>
 
-      {/* Settings Button */}
       <Settings serverUrl={serverUrl} onServerUrlChange={setServerUrl} />
 
       <div className="flex-1 overflow-y-auto p-4 mt-16 mb-52">

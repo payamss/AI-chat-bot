@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiSettings, FiX } from 'react-icons/fi';
 
 interface SettingsProps {
@@ -8,31 +8,65 @@ interface SettingsProps {
     onServerUrlChange: (newUrl: string) => void;
 }
 
+const LOCAL_STORAGE_KEY = 'ollama_settings';
+
 const Settings: React.FC<SettingsProps> = ({ serverUrl, onServerUrlChange }) => {
     const [isOpen, setIsOpen] = useState(false); // Track open/close state
     const [newUrl, setNewUrl] = useState(serverUrl); // Local state for URL input
     const [useLocalhost, setUseLocalhost] = useState(serverUrl === 'http://localhost:11434'); // Track localhost usage
 
-    const toggleSettings = () => {
-        setIsOpen((prev) => !prev); // Toggle visibility
+    // Load saved settings from localStorage on mount
+    useEffect(() => {
+        const savedSettings = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (savedSettings) {
+            const { useLocalhost: savedUseLocalhost, serverUrl: savedUrl } = JSON.parse(savedSettings);
+            setUseLocalhost(savedUseLocalhost);
+            setNewUrl(savedUrl || 'http://localhost:11434');
+            if (savedUseLocalhost) {
+                onServerUrlChange('http://localhost:11434'); // Use localhost
+            } else if (savedUrl) {
+                onServerUrlChange(savedUrl); // Use saved custom URL
+            }
+        }
+    }, [onServerUrlChange]);
+
+    // Save settings to localStorage
+    const saveSettings = (useLocal: boolean, url: string) => {
+        localStorage.setItem(
+            LOCAL_STORAGE_KEY,
+            JSON.stringify({
+                useLocalhost: useLocal,
+                serverUrl: url,
+            })
+        );
     };
 
+    // Toggle localhost or custom URL
     const handleSwitchChange = () => {
         const useLocal = !useLocalhost; // Toggle localhost state
         setUseLocalhost(useLocal);
 
         if (useLocal) {
-            // If switched to localhost, immediately update the server URL
-            onServerUrlChange('http://localhost:11434');
+            const localhostUrl = 'http://localhost:11434';
+            onServerUrlChange(localhostUrl);
+            saveSettings(true, localhostUrl);
+        } else {
+            saveSettings(false, newUrl); // Save current custom URL to localStorage
         }
     };
 
+    // Save the custom server URL
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!useLocalhost && newUrl.trim()) {
-            onServerUrlChange(newUrl); // Pass updated server URL to parent
-            setIsOpen(false); // Close settings after save
+            onServerUrlChange(newUrl); // Update the custom server URL
+            saveSettings(false, newUrl); // Save the custom URL to localStorage
+            setIsOpen(false); // Close the settings form
         }
+    };
+
+    const toggleSettings = () => {
+        setIsOpen((prev) => !prev); // Toggle settings visibility
     };
 
     return (
