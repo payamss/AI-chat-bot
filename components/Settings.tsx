@@ -4,77 +4,69 @@ import React, { useState, useEffect } from 'react';
 import { FiSettings, FiX } from 'react-icons/fi';
 
 interface SettingsProps {
-    serverUrl: string;
+    currentUrl: string;
     onServerUrlChange: (newUrl: string) => void;
 }
 
-const LOCAL_STORAGE_KEY = 'ollama_settings';
+const LOCAL_STORAGE_KEY_SERVER_URL = 'chatbot_server_url';
+const LOCAL_STORAGE_KEY_LOCAL_URL = 'chatbot_local_url';
+const DEFAULT_LOCAL_URL = 'http://localhost:11434';
 
-const Settings: React.FC<SettingsProps> = ({ serverUrl, onServerUrlChange }) => {
-    const [isOpen, setIsOpen] = useState(false); // Track open/close state
-    const [newUrl, setNewUrl] = useState(serverUrl); // Local state for URL input
-    const [useLocalhost, setUseLocalhost] = useState(serverUrl === 'http://localhost:11434'); // Track localhost usage
+const Settings: React.FC<SettingsProps> = ({ currentUrl, onServerUrlChange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [serverUrl, setServerUrl] = useState<string>(''); // Remote server URL
+    const [localUrl, setLocalUrl] = useState<string>(DEFAULT_LOCAL_URL); // Default localhost URL
+    const [isUsingLocalhost, setIsUsingLocalhost] = useState(currentUrl === localUrl);
 
-    // Load saved settings from localStorage on mount
+    // Load stored values on mount
     useEffect(() => {
-        const savedSettings = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (savedSettings) {
-            const { useLocalhost: savedUseLocalhost, serverUrl: savedUrl } = JSON.parse(savedSettings);
-            setUseLocalhost(savedUseLocalhost);
-            setNewUrl(savedUrl || 'http://localhost:11434');
-            if (savedUseLocalhost) {
-                onServerUrlChange('http://localhost:11434'); // Use localhost
-            } else if (savedUrl) {
-                onServerUrlChange(savedUrl); // Use saved custom URL
-            }
-        }
-    }, [onServerUrlChange]);
+        const savedServerUrl = localStorage.getItem(LOCAL_STORAGE_KEY_SERVER_URL);
+        const savedLocalUrl = localStorage.getItem(LOCAL_STORAGE_KEY_LOCAL_URL) || DEFAULT_LOCAL_URL;
 
-    // Save settings to localStorage
-    const saveSettings = (useLocal: boolean, url: string) => {
-        localStorage.setItem(
-            LOCAL_STORAGE_KEY,
-            JSON.stringify({
-                useLocalhost: useLocal,
-                serverUrl: url,
-            })
-        );
+        setServerUrl(savedServerUrl || '');
+        setLocalUrl(savedLocalUrl);
+        setIsUsingLocalhost(currentUrl === savedLocalUrl);
+    }, [currentUrl]);
+
+    // Save URLs to localStorage
+    const saveUrls = (urlKey: string, urlValue: string) => {
+        localStorage.setItem(urlKey, urlValue);
     };
 
-    // Toggle localhost or custom URL
+    // Handle switch toggle between localhost and server
     const handleSwitchChange = () => {
-        const useLocal = !useLocalhost; // Toggle localhost state
-        setUseLocalhost(useLocal);
+        const useLocal = !isUsingLocalhost;
+        setIsUsingLocalhost(useLocal);
 
-        if (useLocal) {
-            const localhostUrl = 'http://localhost:11434';
-            onServerUrlChange(localhostUrl);
-            saveSettings(true, localhostUrl);
-        } else {
-            saveSettings(false, newUrl); // Save current custom URL to localStorage
-        }
+        const newUrl = useLocal ? localUrl : serverUrl;
+        onServerUrlChange(newUrl); // Update current URL in the app
     };
 
-    // Save the custom server URL
+    // Handle saving the server URL
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!useLocalhost && newUrl.trim()) {
-            onServerUrlChange(newUrl); // Update the custom server URL
-            saveSettings(false, newUrl); // Save the custom URL to localStorage
-            setIsOpen(false); // Close the settings form
+        if (serverUrl.trim()) {
+            saveUrls(LOCAL_STORAGE_KEY_SERVER_URL, serverUrl);
+            if (!isUsingLocalhost) {
+                onServerUrlChange(serverUrl); // Update URL if remote server is active
+            }
+            setIsOpen(false); // Close settings modal
         }
     };
 
-    const toggleSettings = () => {
-        setIsOpen((prev) => !prev); // Toggle settings visibility
+    // Save local URL when edited
+    const handleLocalUrlSave = () => {
+        saveUrls(LOCAL_STORAGE_KEY_LOCAL_URL, localUrl);
+        if (isUsingLocalhost) {
+            onServerUrlChange(localUrl); // Update current URL if localhost is active
+        }
     };
 
     return (
         <div className="fixed top-4 right-4 z-20">
-            {/* Icon Button */}
             {!isOpen && (
                 <button
-                    onClick={toggleSettings}
+                    onClick={() => setIsOpen(true)}
                     className="p-2 rounded-full bg-primary-neutral-gray-700 text-gray-200 hover:bg-crimson transition duration-300"
                     aria-label="Open Settings"
                 >
@@ -82,12 +74,10 @@ const Settings: React.FC<SettingsProps> = ({ serverUrl, onServerUrlChange }) => 
                 </button>
             )}
 
-            {/* Expanded Settings Form */}
             {isOpen && (
                 <div className="relative bg-primary-neutral-gray-800 p-4 rounded-lg shadow-lg w-80">
-                    {/* Close Button */}
                     <button
-                        onClick={toggleSettings}
+                        onClick={() => setIsOpen(false)}
                         className="absolute top-2 right-2 text-gray-400 hover:text-gray-200"
                         aria-label="Close Settings"
                     >
@@ -96,12 +86,16 @@ const Settings: React.FC<SettingsProps> = ({ serverUrl, onServerUrlChange }) => 
 
                     <h2 className="text-lg font-bold text-white mb-4">Settings</h2>
 
+                    {/* Switch Between Localhost and Server */}
                     <div className="flex items-center justify-between mb-4">
-                        <span className="text-gray-400 text-sm">Use Localhost:</span>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label htmlFor="localhostToggle" className="text-gray-400 text-sm">
+                            Use Localhost:
+                        </label>
+                        <label htmlFor="localhostToggle" className="relative inline-flex items-center cursor-pointer">
                             <input
+                                id="localhostToggle"
                                 type="checkbox"
-                                checked={useLocalhost}
+                                checked={isUsingLocalhost}
                                 onChange={handleSwitchChange}
                                 className="sr-only peer"
                             />
@@ -110,8 +104,26 @@ const Settings: React.FC<SettingsProps> = ({ serverUrl, onServerUrlChange }) => 
                         </label>
                     </div>
 
-                    {/* URL Input Form */}
-                    {!useLocalhost && (
+                    {/* Localhost URL */}
+                    {isUsingLocalhost && (
+                        <div className="space-y-2">
+                            <label htmlFor="localUrl" className="text-gray-400 text-sm">
+                                Localhost URL:
+                            </label>
+                            <input
+                                type="text"
+                                id="localUrl"
+                                value={localUrl}
+                                onChange={(e) => setLocalUrl(e.target.value)}
+                                onBlur={handleLocalUrlSave} // Save on blur
+                                placeholder="Enter localhost URL"
+                                className="w-full px-3 py-2 rounded-md bg-primary-neutral-gray-700 text-gray-300 focus:outline-none focus:ring-2 focus:ring-crimson"
+                            />
+                        </div>
+                    )}
+
+                    {/* Server URL */}
+                    {!isUsingLocalhost && (
                         <form onSubmit={handleSubmit} className="space-y-2">
                             <label htmlFor="serverUrl" className="text-gray-400 text-sm">
                                 Ollama Server URL:
@@ -119,9 +131,9 @@ const Settings: React.FC<SettingsProps> = ({ serverUrl, onServerUrlChange }) => 
                             <input
                                 type="text"
                                 id="serverUrl"
-                                value={newUrl}
-                                onChange={(e) => setNewUrl(e.target.value)}
-                                placeholder="Enter Ollama server URL"
+                                value={serverUrl}
+                                onChange={(e) => setServerUrl(e.target.value)}
+                                placeholder="Enter server URL"
                                 className="w-full px-3 py-2 rounded-md bg-primary-neutral-gray-700 text-gray-300 focus:outline-none focus:ring-2 focus:ring-crimson"
                             />
                             <button
