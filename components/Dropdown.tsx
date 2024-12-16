@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 interface DropdownProps {
   models: string[];
@@ -11,13 +11,17 @@ interface DropdownProps {
 const Dropdown: React.FC<DropdownProps> = ({ models, selectedModel, onModelChange }) => {
   return (
     <div className="relative">
+      <label htmlFor="model-select" className="block text-gray-400 mb-2 text-sm">
+        Select Model:
+      </label>
       <select
-        className="border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        id="model-select"
         value={selectedModel}
         onChange={(e) => onModelChange(e.target.value)}
+        className="block w-full p-2.5 bg-primary-neutral-gray-800 text-gray-300 rounded-md border border-gray-700 focus:ring-2 focus:ring-crimson focus:outline-none"
       >
         {models.map((model) => (
-          <option key={model} value={model}>
+          <option key={model} value={model} className="bg-primary-neutral-gray-900 text-gray-200">
             {model}
           </option>
         ))}

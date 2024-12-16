@@ -18,17 +18,17 @@ const ChatBox: React.FC<ChatBoxProps> = ({ onSendMessage }) => {
   };
 
   return (
-    <form className="flex gap-2" onSubmit={handleSubmit}>
-      <input
-        type="text"
-        className="flex-1 border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+    <form className="space-y-2" onSubmit={handleSubmit}>
+      <textarea
+        rows={3}
+        className="w-full bg-primary-neutral-gray-800 text-gray-200 rounded-md border border-gray-700 px-4 py-2 focus:ring-2 focus:ring-crimson focus:outline-none resize-none"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         placeholder="Ask a question..."
       />
       <button
         type="submit"
-        className="bg-blue-500 text-white rounded-md px-4 py-2 text-sm hover:bg-blue-600"
+        className="bg-crimson text-white px-4 py-2 rounded-md hover:bg-red-600 transition"
       >
         Send
       </button>

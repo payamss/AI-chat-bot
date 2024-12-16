@@ -27,10 +27,12 @@ export default function Home() {
   };
 
   return (
-    <div className="p-8 space-y-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold">Chat App</h1>
+    <div className="max-w-4xl mx-auto p-6 space-y-6 bg-primary-neutral-gray-850 shadow-lg rounded-lg mt-10">
+      <h1 className="text-3xl font-bold text-crimson text-center">Chat App</h1>
       <Dropdown models={models} selectedModel={selectedModel} onModelChange={setSelectedModel} />
-      <MessageDisplay messages={messages} />
+      <div className="space-y-4">
+        <MessageDisplay messages={messages} />
+      </div>
       <ChatBox onSendMessage={handleSendMessage} />
     </div>
   );
