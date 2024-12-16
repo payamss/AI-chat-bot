@@ -79,15 +79,15 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
         <div
           key={index}
           className={`p-4 rounded-md ${message.role === 'assistant'
-            ? 'bg-primary-neutral-gray-800 text-gray-200'
-            : 'bg-primary-neutral-gray-850 text-right text-gray-300'
+            ? 'bg-primary-neutral-gray-800 text-gray-200 rounded-xl'
+            : 'bg-primary-neutral-gray-850 border rounded-xl border-primary-neutral-gray-700 text-gray-300'
             }`}
         >
           {message.role === 'assistant' ? (
             <strong className="block text-crimson mb-2">AI:</strong>
           ) : (
-            <strong dir="rtl" className="block text-right text-crimson mb-2">
-              You Asked for
+            <strong className="block  text-crimson mb-2">
+
             </strong>
           )}
           {renderContent(message.content)}

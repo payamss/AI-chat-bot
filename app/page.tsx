@@ -50,7 +50,7 @@ export default function Home() {
       }
     } finally {
       setLoading(false);
-      setThinkingMessage(''); // Clear thinking message
+      setThinkingMessage('');
     }
   };
 
