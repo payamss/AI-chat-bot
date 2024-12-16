@@ -2,55 +2,66 @@
 
 import React, { useState } from 'react';
 import SimpleNotification from './simpleNotification';
+import { FiCheck, FiCopy } from 'react-icons/fi';
 
 interface MessageDisplayProps {
   messages: { role: string; content: string }[];
 }
 
 const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
-    const [showNotification, setShowNotification] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null); // Track which block is copied
 
-  const copyToClipboard = async (code: string) => {
+  const copyToClipboard = async (code: string, index: number) => {
     try {
-       await navigator.clipboard.writeText(code);
-        setShowNotification(true); // Show notification
-      } catch (error) {
-        console.error('Failed to copy text:', error);
-        alert('Failed to copy payment address. Please try again.');
-      }
-
+      if (!code) return; // Prevent copying empty content
+      await navigator.clipboard.writeText(code.trim());
+      setShowNotification(true); // Show notification
+      setCopiedIndex(index); // Mark the copied block
+      setTimeout(() => setCopiedIndex(null), 3000); // Reset copied state after 3 seconds
+    } catch (error) {
+      console.error('Failed to copy text:', error);
+      alert('Failed to copy content. Please try again.');
+    }
   };
 
   const renderContent = (content: string) => {
-    // Split text into lines and identify code blocks
     const lines = content.split('\n');
     const result = [];
     let codeBlock: string[] = [];
     let insideCode = false;
 
-    for (let line of lines) {
+    for (const line of lines) {
       if (line.startsWith('```')) {
         if (insideCode) {
+          // Closing code block
+          const code = codeBlock.join('\n'); // Combine code lines
+          const blockIndex = result.length; // Unique index for each block
           result.push(
             <div
-              key={result.length}
-              className="bg-gray-800 text-gray-100 p-4 rounded-md relative"
+              key={blockIndex}
+              className="relative my-4 bg-primary-neutral-gray-700 text-gray-200 p-4 rounded-md"
             >
-              <pre className="whitespace-pre-wrap">{codeBlock.join('\n')}</pre>
+              <pre className="whitespace-pre-wrap text-sm">{code}</pre>
               <button
-                className="absolute top-2 right-2 bg-crimson text-white px-2 py-1 rounded hover:bg-red-600"
-                onClick={() => copyToClipboard(codeBlock.join('\n'))}
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-200"
+                onClick={() => copyToClipboard(code, blockIndex)} // Pass code and index
               >
-                Copy
+                {copiedIndex === blockIndex ? (
+                  <FiCheck size={18} className="text-green-400" />
+                ) : (
+                  <FiCopy size={18} />
+                )}
               </button>
             </div>
           );
-          codeBlock = [];
+          codeBlock = []; // Reset the code block
         }
-        insideCode = !insideCode;
+        insideCode = !insideCode; // Toggle code block mode
       } else if (insideCode) {
-        codeBlock.push(line);
+        codeBlock.push(line); // Add lines to the current code block
       } else {
+        // Regular text
         result.push(
           <p key={result.length} className="text-gray-300">
             {line}
@@ -67,23 +78,28 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
       {messages.map((message, index) => (
         <div
           key={index}
-          className={`p-4 rounded-md ${
-            message.role === 'assistant'
-              ? 'bg-primary-neutral-gray-800 text-gray-100'
-              : 'bg-primary-neutral-gray-900 text-gray-300'
-          }`}
+          className={`p-4 rounded-md ${message.role === 'assistant'
+            ? 'bg-primary-neutral-gray-800 text-gray-200'
+            : 'bg-primary-neutral-gray-850 text-right text-gray-300'
+            }`}
         >
-          <strong className="block text-crimson mb-2">{message.role}:</strong>
+          {message.role === 'assistant' ? (
+            <strong className="block text-crimson mb-2">AI:</strong>
+          ) : (
+            <strong dir="rtl" className="block text-right text-crimson mb-2">
+              You Asked for
+            </strong>
+          )}
           {renderContent(message.content)}
         </div>
       ))}
-        {/* Notification */}
-        {showNotification && (
-                  <SimpleNotification
-                    message="Wallet address copied to clipboard"
-                    onClose={() => setShowNotification(false)}
-                  />
-                )}
+      {/* Notification */}
+      {showNotification && (
+        <SimpleNotification
+          message="Content copied to clipboard!"
+          onClose={() => setShowNotification(false)}
+        />
+      )}
     </div>
   );
 };
