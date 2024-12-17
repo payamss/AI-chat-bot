@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SimpleNotification from './simpleNotification';
 import { FiCheck, FiCopy, FiClock, FiPlay } from 'react-icons/fi';
 import Link from 'next/link';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/github-dark.css'; // Import a predefined theme
 
 interface MessageDisplayProps {
   messages: {
@@ -18,6 +20,11 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
   const [showNotification, setShowNotification] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [output, setOutput] = useState<{ [key: number]: string | null }>({}); // Output storage for each code block
+
+  useEffect(() => {
+    // Automatically highlight all code blocks after render
+    hljs.highlightAll();
+  }, [messages]);
 
   const copyToClipboard = async (code: string, index: number) => {
     try {
@@ -54,7 +61,7 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
     const result = [];
     let codeBlock: string[] = [];
     let insideCode = false;
-    let language = 'Unknown';
+    let language = 'plaintext';
 
     const getDomain = (url: string) => {
       try {
@@ -67,7 +74,7 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
 
     const detectLanguage = (line: string) => {
       const match = line.match(/^```(\w+)/);
-      return match ? match[1] : 'Unknown';
+      return match ? match[1] : 'plaintext';
     };
 
     for (const line of lines) {
@@ -79,16 +86,18 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
           result.push(
             <div
               key={blockIndex}
-              className="relative my-4 bg-primary-neutral-gray-700 text-gray-200 p-4 rounded-md"
+              className="relative my-4 bg-primary-neutral-gray-700 text-gray-200 pt-2 rounded-md"
             >
               {/* Display Language */}
-              <div className="text-xs text-gray-400 mb-2">Language: {language}</div>
+              <div className="text-xs text-gray-400 mb-2 pl-4">Language: {language}</div>
 
-              {/* Code Block */}
-              <pre className="whitespace-pre-wrap text-sm">{code}</pre>
+              {/* Syntax Highlighted Code */}
+              <pre>
+                <code className={`hljs language-${language}`}>{code}</code>
+              </pre>
 
               {/* Buttons */}
-              <div className="absolute top-2 right-2 flex gap-2">
+              <div className="absolute top-2 right-2 flex gap-2 pr-2">
                 {/* Copy Button */}
                 <button
                   className="text-gray-400 hover:text-gray-200"
