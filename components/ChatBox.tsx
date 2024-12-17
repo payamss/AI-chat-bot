@@ -1,35 +1,53 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { AiFillStop } from 'react-icons/ai';
+import { BiSend } from 'react-icons/bi';
+import { FiMaximize, FiMinimize } from 'react-icons/fi';
 
 interface ChatBoxProps {
   onSendMessage: (message: string, controller: AbortController) => Promise<void>;
 }
 
 const ChatBox: React.FC<ChatBoxProps> = ({ onSendMessage }) => {
-  const [message, setMessage] = useState(''); // Input value
-  const [isSending, setIsSending] = useState(false); // Tracks if a request is in progress
-  const controllerRef = useRef<AbortController | null>(null); // Persistent reference for AbortController
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const controllerRef = useRef<AbortController | null>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  const MAX_ROWS = isFullScreen ? 25 : 6;
+  const [rows, setRows] = useState(2);
+
+  // Dynamically adjust textarea height
+  const adjustTextAreaRows = () => {
+    if (textAreaRef.current) {
+      const currentRows = message.split('\n').length;
+      setRows(Math.min(MAX_ROWS, currentRows));
+    }
+  };
+
+  useEffect(() => {
+    adjustTextAreaRows();
+  }, [message, isFullScreen]);
 
   const startNewRequest = async () => {
-    // Initialize AbortController for this request
     const controller = new AbortController();
     controllerRef.current = controller;
 
     try {
-      // Call the parent onSendMessage function
       await onSendMessage(message, controller);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.log('Request was manually stopped by the user.');
+        console.log('Request stopped.');
       } else {
-        console.error('Error sending message:', error);
+        console.error('Error:', error);
       }
     } finally {
-      setIsSending(false); // Reset sending state
-      controllerRef.current = null; // Cleanup AbortController
-      setMessage(''); // Clear the input field
+      setIsSending(false);
+      controllerRef.current = null;
+      setMessage('');
     }
   };
 
@@ -37,40 +55,78 @@ const ChatBox: React.FC<ChatBoxProps> = ({ onSendMessage }) => {
     e.preventDefault();
 
     if (isSending) {
-      // If currently sending, abort the request
-      console.log('Stopping current request...');
-      controllerRef.current?.abort('User stopped the request'); // Provide a clear abort reason
+      controllerRef.current?.abort();
       setIsSending(false);
       return;
     }
 
     if (message.trim()) {
-      setIsSending(true); // Set loading state
-      await startNewRequest(); // Start a new request
+      setIsSending(true);
+      await startNewRequest();
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e as unknown as React.FormEvent);
+    }
+  };
+
+  const toggleFullScreen = () => {
+    setIsFullScreen((prev) => !prev);
+    setTimeout(() => textAreaRef.current?.focus(), 0);
+  };
+
   return (
-    <form className="space-y-2" onSubmit={handleSubmit}>
-      {/* Input Field */}
+    <form
+      onSubmit={handleSubmit}
+      className={`relative transition-all duration-500 p-0 m-0 ${isFullScreen
+        ? '   z-50 rounded-xl '
+        : 'rounded-xl '
+        }`}
+    >
+      {/* Fullscreen Toggle Button */}
+      <button
+        type="button"
+        onClick={toggleFullScreen}
+        className={`absolute  text-red-800 hover:text-crimson transition-transform duration-500 z-10 ${isFullScreen
+          ? '   top-2 right-6 '
+          : '-top-3 -right-2 '}`}
+        aria-label="Toggle Fullscreen"
+      >
+        {isFullScreen ? <FiMinimize size={24} /> : <FiMaximize size={24} />}
+      </button>
+
+      {/* Textarea Input */}
+
       <textarea
-        rows={3}
-        className="w-full bg-primary-neutral-gray-800 text-gray-200 rounded-md border border-gray-700 px-4 py-2 focus:ring-2 focus:ring-crimson focus:outline-none resize-none"
+        ref={textAreaRef}
+        rows={rows}
         value={message}
+        onKeyDown={handleKeyDown}
         onChange={(e) => setMessage(e.target.value)}
         placeholder={isSending ? 'Stopping request...' : 'Ask a question...'}
-        disabled={isSending} // Disable input while sending
+        className="w-full h-full relative bg-primary-neutral-gray-800 text-gray-200 rounded-xl pr-20 px-4 py-3 focus:ring-1 focus:ring-crimson focus:outline-none scrollbar-thin scrollbar-thumb-crimson transition-all duration-500  leading-loose text-sm sm:text-base "
+        disabled={isSending}
+        style={{
+          maxHeight: isFullScreen ? '95vh' : '30vh',
+        }}
       />
+
 
       {/* Send/Stop Button */}
       <button
         type="submit"
-        className={`w-full px-4 py-2 rounded-md text-white transition ${isSending
-            ? 'bg-red-600 hover:bg-red-700 cursor-pointer'
-            : 'bg-crimson hover:bg-red-600'
+        className={`absolute bottom-1 right-0 py-3 px-4 rounded-xl text-white transition-all duration-500 opacity-100 ${isSending ? 'bg-crimson hover:bg-red-700' : 'bg-crimson hover:opacity-80'
           }`}
+        aria-label={isSending ? 'Stop' : 'Send'}
+
+
       >
-        {isSending ? 'Stop' : 'Send'}
+        <div className="flex justify-between">        {isSending ? "Stop" : "Send"}
+          {isSending ? <AiFillStop size={24} /> : <BiSend size={24} />}</div>
+
       </button>
     </form>
   );

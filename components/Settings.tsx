@@ -64,88 +64,91 @@ const Settings: React.FC<SettingsProps> = ({ currentUrl, onServerUrlChange }) =>
 
     return (
         <div className="fixed top-4 right-4 z-20">
-            {!isOpen && (
+            {/* Button with Scale Animation */}
+            <button
+                onClick={() => setIsOpen(true)}
+                className={`p-2 rounded-full bg-primary-neutral-gray-700 text-gray-200 hover:bg-crimson 
+        transition-transform duration-300 ${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
+                aria-label="Open Settings"
+            >
+                <FiSettings size={24} />
+            </button>
+
+            {/* Settings Modal with Scale and Opacity Animation */}
+            <div
+                className={`fixed top-4 right-4 bg-primary-neutral-gray-800 p-6 rounded-lg shadow-lg w-80 
+        transform transition-all duration-300 origin-top-right 
+        ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}
+            >
                 <button
-                    onClick={() => setIsOpen(true)}
-                    className="p-2 rounded-full bg-primary-neutral-gray-700 text-gray-200 hover:bg-crimson transition duration-300"
-                    aria-label="Open Settings"
+                    onClick={() => setIsOpen(false)}
+                    className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 transition"
+                    aria-label="Close Settings"
                 >
-                    <FiSettings size={24} />
+                    <FiX size={20} />
                 </button>
-            )}
 
-            {isOpen && (
-                <div className="relative bg-primary-neutral-gray-800 p-4 rounded-lg shadow-lg w-80">
-                    <button
-                        onClick={() => setIsOpen(false)}
-                        className="absolute top-2 right-2 text-gray-400 hover:text-gray-200"
-                        aria-label="Close Settings"
-                    >
-                        <FiX size={20} />
-                    </button>
+                <h2 className="text-lg font-bold text-white mb-4">Settings</h2>
 
-                    <h2 className="text-lg font-bold text-white mb-4">Settings</h2>
-
-                    {/* Switch Between Localhost and Server */}
-                    <div className="flex items-center justify-between mb-4">
-                        <label htmlFor="localhostToggle" className="text-gray-400 text-sm">
-                            Use Localhost:
-                        </label>
-                        <label htmlFor="localhostToggle" className="relative inline-flex items-center cursor-pointer">
-                            <input
-                                id="localhostToggle"
-                                type="checkbox"
-                                checked={isUsingLocalhost}
-                                onChange={handleSwitchChange}
-                                className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-crimson transition duration-300"></div>
-                            <div className="absolute w-5 h-5 bg-white rounded-full left-1 peer-checked:translate-x-5 transition duration-300"></div>
-                        </label>
-                    </div>
-
-                    {/* Localhost URL */}
-                    {isUsingLocalhost && (
-                        <div className="space-y-2">
-                            <label htmlFor="localUrl" className="text-gray-400 text-sm">
-                                Localhost URL:
-                            </label>
-                            <input
-                                type="text"
-                                id="localUrl"
-                                value={localUrl}
-                                onChange={(e) => setLocalUrl(e.target.value)}
-                                onBlur={handleLocalUrlSave} // Save on blur
-                                placeholder="Enter localhost URL"
-                                className="w-full px-3 py-2 rounded-md bg-primary-neutral-gray-700 text-gray-300 focus:outline-none focus:ring-2 focus:ring-crimson"
-                            />
-                        </div>
-                    )}
-
-                    {/* Server URL */}
-                    {!isUsingLocalhost && (
-                        <form onSubmit={handleSubmit} className="space-y-2">
-                            <label htmlFor="serverUrl" className="text-gray-400 text-sm">
-                                Ollama Server URL:
-                            </label>
-                            <input
-                                type="text"
-                                id="serverUrl"
-                                value={serverUrl}
-                                onChange={(e) => setServerUrl(e.target.value)}
-                                placeholder="Enter server URL"
-                                className="w-full px-3 py-2 rounded-md bg-primary-neutral-gray-700 text-gray-300 focus:outline-none focus:ring-2 focus:ring-crimson"
-                            />
-                            <button
-                                type="submit"
-                                className="w-full px-3 py-2 bg-crimson text-white rounded-md hover:bg-red-600 transition"
-                            >
-                                Save
-                            </button>
-                        </form>
-                    )}
+                {/* Switch Between Localhost and Server */}
+                <div className="flex items-center justify-between mb-4">
+                    <label htmlFor="localhostToggle" className="text-gray-400 text-sm">
+                        Use Localhost:
+                    </label>
+                    <label htmlFor="localhostToggle" className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            id="localhostToggle"
+                            type="checkbox"
+                            checked={isUsingLocalhost}
+                            onChange={handleSwitchChange}
+                            className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-crimson transition duration-300"></div>
+                        <div className="absolute w-5 h-5 bg-white rounded-full left-1 peer-checked:translate-x-5 transition duration-300"></div>
+                    </label>
                 </div>
-            )}
+
+                {/* Localhost URL */}
+                {isUsingLocalhost && (
+                    <div className="space-y-2">
+                        <label htmlFor="localUrl" className="text-gray-400 text-sm">
+                            Localhost URL:
+                        </label>
+                        <input
+                            type="text"
+                            id="localUrl"
+                            value={localUrl}
+                            onChange={(e) => setLocalUrl(e.target.value)}
+                            onBlur={handleLocalUrlSave} // Save on blur
+                            placeholder="Enter localhost URL"
+                            className="w-full px-3 py-2 rounded-md bg-primary-neutral-gray-700 text-gray-300 focus:outline-none focus:ring-2 focus:ring-crimson"
+                        />
+                    </div>
+                )}
+
+                {/* Server URL */}
+                {!isUsingLocalhost && (
+                    <form onSubmit={handleSubmit} className="space-y-2">
+                        <label htmlFor="serverUrl" className="text-gray-400 text-sm">
+                            Ollama Server URL:
+                        </label>
+                        <input
+                            type="text"
+                            id="serverUrl"
+                            value={serverUrl}
+                            onChange={(e) => setServerUrl(e.target.value)}
+                            placeholder="Enter server URL"
+                            className="w-full px-3 py-2 rounded-md bg-primary-neutral-gray-700 text-gray-300 focus:outline-none focus:ring-2 focus:ring-crimson"
+                        />
+                        <button
+                            type="submit"
+                            className="w-full px-3 py-2 bg-crimson text-white rounded-md hover:bg-red-600 transition"
+                        >
+                            Save
+                        </button>
+                    </form>
+                )}
+            </div>
         </div>
     );
 };

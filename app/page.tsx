@@ -140,13 +140,13 @@ export default function Home() {
       </div>
 
       {/* ChatBox fixed at the bottom */}
-      <div className="fixed bottom-0 left-0 w-full bg-primary-neutral-gray-800 p-4 shadow-lg">
+      <div className="fixed bottom-0 left-0 w-full bg-primary-neutral-gray-850 p-4 shadow-2xl">
         <ChatBox onSendMessage={(message) => handleSendMessage(message)} />
       </div>
 
       {/* Thinking Message Overlay */}
       {thinkingMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-20">
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-20 h-[80%]">
           <div className="bg-primary-neutral-gray-800 p-6 rounded-lg shadow-lg w-96 text-center">
             <h2 className="text-white text-lg font-bold mb-4">Processing...</h2>
             <p className="text-xl text-crimson animate-pulse">{thinkingMessage}</p>
