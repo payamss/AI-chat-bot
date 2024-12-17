@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import SimpleNotification from './simpleNotification';
-import { FiCheck, FiCopy, FiClock } from 'react-icons/fi';
+import { FiCheck, FiCopy, FiClock, FiPlay } from 'react-icons/fi';
 import Link from 'next/link';
 
 interface MessageDisplayProps {
@@ -16,73 +16,125 @@ interface MessageDisplayProps {
 
 const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
   const [showNotification, setShowNotification] = useState(false);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null); // Track which block is copied
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [output, setOutput] = useState<{ [key: number]: string | null }>({}); // Output storage for each code block
 
   const copyToClipboard = async (code: string, index: number) => {
     try {
-      if (!code) return; // Prevent copying empty content
+      if (!code) return;
       await navigator.clipboard.writeText(code.trim());
-      setShowNotification(true); // Show notification
-      setCopiedIndex(index); // Mark the copied block
-      setTimeout(() => setCopiedIndex(null), 3000); // Reset copied state after 3 seconds
+      setShowNotification(true);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 3000);
     } catch (error) {
       console.error('Failed to copy text:', error);
-      alert('Failed to copy content. Please try again.');
+    }
+  };
+
+  const runCode = async (code: string, index: number) => {
+    try {
+      const response = await fetch('/api/run-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+      const data = await response.json();
+      setOutput((prev) => ({ ...prev, [index]: data.output || 'Error running the code.' }));
+    } catch (error) {
+      console.error('Error executing code:', error);
+      setOutput((prev) => ({ ...prev, [index]: 'Error running the code.' }));
     }
   };
 
   const renderContent = (content: string) => {
-    const urlRegex = /(https?:\/\/[^\s)]+)/g; // Regular expression to detect URLs
-    const boldRegex = /\*\*(.*?)\*\*/g; // Regular expression to detect text between ** **
+    const urlRegex = /(https?:\/\/[^\s)]+)/g;
+    const boldRegex = /\*\*(.*?)\*\*/g;
 
-    const lines = content.split('\n'); // Split content into lines
+    const lines = content.split('\n');
     const result = [];
     let codeBlock: string[] = [];
     let insideCode = false;
+    let language = 'Unknown';
 
     const getDomain = (url: string) => {
       try {
-        const hostname = new URL(url).hostname; // Extract the domain name
-        return hostname.replace(/^www\./, ''); // Remove "www." if it exists
+        const hostname = new URL(url).hostname;
+        return hostname.replace(/^www\./, '');
       } catch {
-        return url; // Fallback in case URL parsing fails
+        return url;
       }
+    };
+
+    const detectLanguage = (line: string) => {
+      const match = line.match(/^```(\w+)/);
+      return match ? match[1] : 'Unknown';
     };
 
     for (const line of lines) {
       if (line.startsWith('```')) {
         if (insideCode) {
-          const code = codeBlock.join('\n'); // Combine code lines
-          const blockIndex = result.length; // Unique index for each block
+          const code = codeBlock.join('\n');
+          const blockIndex = result.length;
+
           result.push(
             <div
               key={blockIndex}
               className="relative my-4 bg-primary-neutral-gray-700 text-gray-200 p-4 rounded-md"
             >
+              {/* Display Language */}
+              <div className="text-xs text-gray-400 mb-2">Language: {language}</div>
+
+              {/* Code Block */}
               <pre className="whitespace-pre-wrap text-sm">{code}</pre>
-              <button
-                className="absolute top-2 right-2 text-gray-400 hover:text-gray-200"
-                onClick={() => copyToClipboard(code, blockIndex)} // Pass code and index
-              >
-                {copiedIndex === blockIndex ? (
-                  <FiCheck size={18} className="text-green-400" />
-                ) : (
-                  <FiCopy size={18} />
+
+              {/* Buttons */}
+              <div className="absolute top-2 right-2 flex gap-2">
+                {/* Copy Button */}
+                <button
+                  className="text-gray-400 hover:text-gray-200"
+                  onClick={() => copyToClipboard(code, blockIndex)}
+                >
+                  {copiedIndex === blockIndex ? (
+                    <FiCheck size={18} className="text-green-400" />
+                  ) : (
+                    <FiCopy size={18} />
+                  )}
+                </button>
+
+                {/* Run Button */}
+                {language === 'python' && (
+                  <button
+                    className="text-gray-400 hover:text-green-400"
+                    onClick={() => runCode(code, blockIndex)}
+                  >
+                    <FiPlay size={18} />
+                  </button>
                 )}
-              </button>
+              </div>
+
+              {/* Code Output */}
+              {output[blockIndex] && (
+                <div className="mt-4 p-2 bg-gray-800 text-gray-300 rounded">
+                  <strong>Output:</strong>
+                  <pre className="whitespace-pre-wrap mt-2">{output[blockIndex]}</pre>
+                </div>
+              )}
             </div>
           );
-          codeBlock = []; // Reset the code block
+
+          codeBlock = [];
+          insideCode = false;
+        } else {
+          language = detectLanguage(line);
+          insideCode = true;
         }
-        insideCode = !insideCode; // Toggle code block mode
       } else if (insideCode) {
-        codeBlock.push(line); // Add lines to the current code block
+        codeBlock.push(line);
       } else {
-        // Process regular text
         const processedLine = line.split(urlRegex).map((part, index) => {
           if (urlRegex.test(part)) {
-            const cleanUrl = part.replace(/[()]/g, ''); // Remove parentheses
-            const domain = getDomain(cleanUrl); // Extract domain
+            const cleanUrl = part.replace(/[()]/g, '');
+            const domain = getDomain(cleanUrl);
             return (
               <Link
                 key={index}
@@ -95,7 +147,6 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
               </Link>
             );
           } else {
-            // Replace bold text with <strong>
             const boldedText = part.split(boldRegex).map((boldPart, boldIndex) => {
               if (boldIndex % 2 === 1) {
                 return (
