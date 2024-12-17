@@ -13,12 +13,16 @@ export const sendMessage = async (
   messages: { role: string; content: string }[],
   controller: AbortController,
   baseURL: string = DEFAULT_URL
-): Promise<string> => {
+): Promise<{
+  content: string;
+  model: string;
+  total_duration: number;
+}> => {
   try {
     const response = await fetch(`${baseURL}/api/chat`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model,
@@ -33,9 +37,13 @@ export const sendMessage = async (
     }
 
     const data = await response.json();
-    return data.message.content;
+    return {
+      content: data.message.content,
+      model: data.model,
+      total_duration: data.total_duration,
+    };
   } catch (error) {
-    console.error("Error sending message:", error);
+    console.error('Error sending message:', error);
     throw error;
   }
 };

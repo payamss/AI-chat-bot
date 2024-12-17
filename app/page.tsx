@@ -67,33 +67,38 @@ export default function Home() {
     );
   }, [serverUrl, selectedModel]);
 
-  // Handle message sending
   const handleSendMessage = async (userMessage: string) => {
     if (loading) {
-      // Abort the current request if already loading
       controllerRef.current?.abort();
       setThinkingMessage('');
       setLoading(false);
       return;
     }
 
-    const newMessage = { role: 'user', content: userMessage }; // Construct user message
-    setMessages((prev) => [...prev, newMessage]); // Add the user message to the chat
+    const newMessage = { role: 'user', content: userMessage };
+    setMessages((prev) => [...prev, newMessage]);
     setThinkingMessage('Thinking...');
     setLoading(true);
 
-    const controller = new AbortController(); // Create a new AbortController for this request
+    const controller = new AbortController();
     controllerRef.current = controller;
 
     try {
       const response = await sendMessage(
         selectedModel,
-        [...messages, newMessage], // Include full chat history
+        [...messages, newMessage],
         controller,
         serverUrl
       );
-      const assistantMessage = { role: 'assistant', content: response }; // Construct assistant message
-      setMessages((prev) => [...prev, assistantMessage]); // Add the assistant message to the chat
+
+      const assistantMessage = {
+        role: 'assistant',
+        content: response.content,
+        model: response.model, // Pass model name
+        total_duration: response.total_duration, // Pass response time
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.name === 'AbortError') {
@@ -110,10 +115,11 @@ export default function Home() {
         ]);
       }
     } finally {
-      setThinkingMessage(''); // Clear thinking overlay
-      setLoading(false); // Reset loading state
+      setThinkingMessage('');
+      setLoading(false);
     }
   };
+
 
   return (
     <div className="h-screen flex flex-col bg-primary-neutral-gray-850 text-gray-200 relative">

@@ -2,11 +2,16 @@
 
 import React, { useState } from 'react';
 import SimpleNotification from './simpleNotification';
-import { FiCheck, FiCopy } from 'react-icons/fi';
+import { FiCheck, FiCopy, FiClock } from 'react-icons/fi';
 import Link from 'next/link';
 
 interface MessageDisplayProps {
-  messages: { role: string; content: string }[];
+  messages: {
+    role: string;
+    content: string;
+    model?: string; // Model name for assistant responses
+    total_duration?: number; // Total response duration in nanoseconds
+  }[];
 }
 
 const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
@@ -29,6 +34,7 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
   const renderContent = (content: string) => {
     const urlRegex = /(https?:\/\/[^\s)]+)/g; // Regular expression to detect URLs
     const boldRegex = /\*\*(.*?)\*\*/g; // Regular expression to detect text between ** **
+
     const lines = content.split('\n'); // Split content into lines
     const result = [];
     let codeBlock: string[] = [];
@@ -43,11 +49,9 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
       }
     };
 
-
     for (const line of lines) {
       if (line.startsWith('```')) {
         if (insideCode) {
-          // Closing code block
           const code = codeBlock.join('\n'); // Combine code lines
           const blockIndex = result.length; // Unique index for each block
           result.push(
@@ -77,7 +81,6 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
         // Process regular text
         const processedLine = line.split(urlRegex).map((part, index) => {
           if (urlRegex.test(part)) {
-            // If part is a URL, display the domain name
             const cleanUrl = part.replace(/[()]/g, ''); // Remove parentheses
             const domain = getDomain(cleanUrl); // Extract domain
             return (
@@ -95,7 +98,6 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
             // Replace bold text with <strong>
             const boldedText = part.split(boldRegex).map((boldPart, boldIndex) => {
               if (boldIndex % 2 === 1) {
-                // Odd index means it matches bold text
                 return (
                   <strong key={boldIndex} className="font-bold text-white">
                     {boldPart}
@@ -119,6 +121,11 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
     return result;
   };
 
+  const formatDuration = (nanoseconds: number) => {
+    const seconds = (nanoseconds / 1e9).toFixed(2);
+    return `${seconds} seconds`;
+  };
+
   return (
     <div className="space-y-4">
       {messages.map((message, index) => (
@@ -130,14 +137,22 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ messages }) => {
             }`}
         >
           {message.role === 'assistant' ? (
-            <strong className="block text-crimson mb-2">AI:</strong>
+            <div className="flex justify-between mb-2">
+              <strong className="block text-crimson">
+                {message.model || 'AI'}:
+              </strong>
+              {message.total_duration && (
+                <span className="flex items-center text-gray-400 text-sm">
+                  <FiClock className="mr-1" /> {formatDuration(message.total_duration)}
+                </span>
+              )}
+            </div>
           ) : (
             <strong className="block text-crimson mb-2">Q:</strong>
           )}
           {renderContent(message.content)}
         </div>
       ))}
-      {/* Notification */}
       {showNotification && (
         <SimpleNotification
           message="Content copied to clipboard!"
