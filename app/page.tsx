@@ -141,7 +141,7 @@ export default function Home() {
         }}
       />
 
-      <div className="flex-1 overflow-y-auto p-4 mt-16 mb-52">
+      <div className="flex-1 overflow-y-auto p-4 my-20 ">
         <MessageDisplay messages={messages} />
       </div>
 

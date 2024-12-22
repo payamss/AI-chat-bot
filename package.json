@@ -1,7 +1,9 @@
 {
   "name": "chat-bot",
+  "description": "A chat bot app who can connect to multiple Ollama APIs and provide a chat interface for users. It also has a feature to connect local and remote APIs.",
   "version": "0.1.0",
   "private": true,
+  "author": "Payam Shariat",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
